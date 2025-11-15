@@ -1,32 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-m">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* Ensures the chart fills the whole page */
+        body, html { margin: 0; padding: 0; height: 100%; }
+        #chart { width: 100%; height: 100%; }
+    </style>
+</head>
 <body>
-<div id="plot" style="width:100%; height:600px;"></div>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <div id="chart"></div>
 
-<script>
-async function loadData(symbol) {
-    const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol + "?interval=1d&range=1mo");
-    const raw = await res.json();
+    <script>
+        // This function will run automatically
+        async function drawChart() {
+            try {
+                // 1. Get the symbol from the URL (e.g., ?symbol=MARUTI.NS)
+                const urlParams = new URLSearchParams(window.location.search);
+                // Use the symbol from the URL, or default to "TATAMOTORS.NS" if none is provided
+                const symbol = urlParams.get('symbol') || 'TATAMOTORS.NS';
 
-    const result = raw.chart.result[0];
-    const timestamps = result.timestamp;
-    const o = result.indicators.quote[0];
+                // 2. Fetch data from Yahoo Finance API
+                // We are fetching 3 months of daily data
+                const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3mo&interval=1d`);
+                const data = await res.json();
 
-    var trace = {
-        x: timestamps.map(t => new Date(t * 1000)),
-        open: o.open, high: o.high, low: o.low, close: o.close,
-        type: 'candlestick'
-    };
+                // 3. Get the data from the JSON response
+                const result = data.chart.result[0];
+                const timestamps = result.timestamp;
+                const ohlc = result.indicators.quote[0];
 
-    Plotly.newPlot('plot', [trace], { title: symbol });
-}
+                // 4. Format the data for Plotly
+                const trace = {
+                    x: timestamps.map(t => new Date(t * 1000)), // Convert timestamps to dates
+                    open: ohlc.open,
+                    high: ohlc.high,
+                    low: ohlc.low,
+                    close: ohlc.close,
+                    type: 'candlestick',
+                    name: symbol,
+                    increasing: { line: { color: '#00b060' } }, // Green for up
+                    decreasing: { line: { color: '#ff5000' } }  // Red for down
+                };
 
-const url = new URL(window.location.href);
-const symbol = url.searchParams.get("symbol") || "TATAMOTORS.NS";
+                const layout = {
+                    title: `${symbol} - 3 Month Candlestick Chart`,
+                    dragmode: 'zoom',
+                    showlegend: false,
+                    xaxis: { rangeslider: { visible: false } }, // Hide the range slider
+                    yaxis: { title: 'Stock Price' }
+                };
 
-loadData(symbol);
-</script>
+                // 5. Draw the chart
+                Plotly.newPlot('chart', [trace], layout);
 
+            } catch (error) {
+                // If something fails (e.g., bad symbol), show an error
+                document.getElementById('chart').innerText = `Error loading chart for symbol: ${symbol}. ${error.message}`;
+            }
+        }
+
+        // Run the function
+        drawChart();
+    </script>
 </body>
 </html>
