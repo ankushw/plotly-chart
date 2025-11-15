@@ -1,21 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-m">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Plotly Chart</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* Ensures the chart fills the whole page */
-        body, html { margin: 0; padding: 0; height: 100%; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
         #chart { width: 100%; height: 100%; }
+        /* Style for loading/error messages */
+        .message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-family: sans-serif;
+            font-size: 1.2em;
+            color: #555;
+        }
     </style>
 </head>
 <body>
-    <div id="chart"></div>
+    <div id="chart">
+        <div class="message">Loading chart...</div>
+    </div>
 
     <script>
-        // This function will run automatically
+        // This function will run as soon as the page loads
         async function drawChart() {
+            const chartDiv = document.getElementById('chart');
+            
             try {
                 // 1. Get the symbol from the URL (e.g., ?symbol=MARUTI.NS)
                 const urlParams = new URLSearchParams(window.location.search);
@@ -25,14 +40,24 @@
                 // 2. Fetch data from Yahoo Finance API
                 // We are fetching 3 months of daily data
                 const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3mo&interval=1d`);
+                
+                if (!res.ok) {
+                    throw new Error(`Yahoo Finance API returned an error: ${res.status}`);
+                }
+                
                 const data = await res.json();
 
-                // 3. Get the data from the JSON response
+                // 3. Check if data is valid
+                if (!data.chart || !data.chart.result || !data.chart.result[0] || !data.chart.result[0].indicators.quote[0]) {
+                    throw new Error('Invalid data structure from API. The stock symbol might be incorrect.');
+                }
+
+                // 4. Get the data from the JSON response
                 const result = data.chart.result[0];
                 const timestamps = result.timestamp;
                 const ohlc = result.indicators.quote[0];
 
-                // 4. Format the data for Plotly
+                // 5. Format the data for Plotly
                 const trace = {
                     x: timestamps.map(t => new Date(t * 1000)), // Convert timestamps to dates
                     open: ohlc.open,
@@ -50,15 +75,16 @@
                     dragmode: 'zoom',
                     showlegend: false,
                     xaxis: { rangeslider: { visible: false } }, // Hide the range slider
-                    yaxis: { title: 'Stock Price' }
+                    yaxis: { title: 'Stock Price', autorange: true }
                 };
 
-                // 5. Draw the chart
-                Plotly.newPlot('chart', [trace], layout);
+                // 6. Draw the chart (this replaces the "Loading..." message)
+                Plotly.newPlot(chartDiv, [trace], layout);
 
             } catch (error) {
-                // If something fails (e.g., bad symbol), show an error
-                document.getElementById('chart').innerText = `Error loading chart for symbol: ${symbol}. ${error.message}`;
+                // If something fails, show an error message in the div
+                console.error(error); // Log the full error to the console
+                chartDiv.innerHTML = `<div class="message">Error loading chart: ${error.message}</div>`;
             }
         }
 
