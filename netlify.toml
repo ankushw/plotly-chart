@@ -1,0 +1,10 @@
+# Netlify proxy configuration
+[[redirects]]
+  # The path we will use in our HTML file
+  from = "/api/*"
+  # The actual Yahoo Finance API we are proxying
+  to = "https://query1.finance.yahoo.com/v8/finance/chart/:splat"
+  # This status code (200) makes it a proxy
+  status = 200
+  # Allow the proxy to work
+  force = true
