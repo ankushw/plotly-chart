@@ -39,7 +39,7 @@
 
                 // 2. Fetch data from Yahoo Finance API
                 // We are fetching 3 months of daily data
-                const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3mo&interval=1d`);
+                const res = await fetch(`/api/${symbol}?range=3mo&interval=1d`);
                 
                 if (!res.ok) {
                     throw new Error(`Yahoo Finance API returned an error: ${res.status}`);
@@ -93,3 +93,4 @@
     </script>
 </body>
 </html>
+
