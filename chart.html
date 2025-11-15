@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="plot" style="width:100%; height:600px;"></div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+async function loadData(symbol) {
+    const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol + "?interval=1d&range=1mo");
+    const raw = await res.json();
+
+    const result = raw.chart.result[0];
+    const timestamps = result.timestamp;
+    const o = result.indicators.quote[0];
+
+    var trace = {
+        x: timestamps.map(t => new Date(t * 1000)),
+        open: o.open, high: o.high, low: o.low, close: o.close,
+        type: 'candlestick'
+    };
+
+    Plotly.newPlot('plot', [trace], { title: symbol });
+}
+
+const url = new URL(window.location.href);
+const symbol = url.searchParams.get("symbol") || "TATAMOTORS.NS";
+
+loadData(symbol);
+</script>
+
+</body>
+</html>
